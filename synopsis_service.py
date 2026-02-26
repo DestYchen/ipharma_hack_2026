@@ -227,7 +227,8 @@ def _build_prompt(prompt_text: str, attributes: dict[str, Any], template_text: s
 
 
 def _openrouter_chat(prompt: str) -> str:
-    api_key = os.getenv('PHARMA_API_KEY')
+    api_key = os.getenv('OPENROUTER_API_KEY')
+    
     if not api_key:
         raise RuntimeError("Set OPENROUTER_API_KEY env var")
 

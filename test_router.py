@@ -13,7 +13,9 @@ IMPORTANT:
 - Set env var OPENROUTER_API_KEY before running.
 """
 
-OPENROUTER_API_KEY = os.getenv('PHARMA_API_KEY')
+OPENROUTER_API_KEY = os.getenv('OPENROUTER_API_KEY')
+
+
 if not OPENROUTER_API_KEY:
     raise RuntimeError("Set OPENROUTER_API_KEY env var")
 
