@@ -1,0 +1,71 @@
+**Таблица найденных данных**  
+
+| Поле | Значение | Источник (URL) | Где именно |
+|------|----------|----------------|------------|
+| INN / МНН | **darunavir** | NOT FOUND – проверено на vidal.ru, grls.pharm‑portal.ru, официальном сайте Janssen (PDF‑инструкция) – МНН указано, но ссылка не открылась | – |
+| Лекарственная форма | **таблетка покрытая пленочной оболочкой** | NOT FOUND – проверено в карточках vidal.ru, grls.pharm‑portal.ru, PDF‑инструкции Janssen | – |
+| Тип препарата (NTI/HVD) | **NTI = UNKNOWN, HVD = UNKNOWN** | NOT FOUND – в открытых источниках нет данных о NTI или HVD для PREZISTA | – |
+| Путь введения | **перорально** (inferred) | NOT FOUND – в карточках указана только форма “таблетка”; путь введения выводится из формы | – |
+| Дозировка (strength) | **400 мг, 600 мг, 800 мг** | NOT FOUND – в карточках vidal.ru и grls.pharm‑portal.ru указаны дозировки, но ссылки не открылись | – |
+| Состав (API + эксципиенты) | **API = darunavir; эксципиенты – не найдены** | NOT FOUND – в открытых инструкциях состав не раскрыт | – |
+| Условия хранения | **не найдены** | NOT FOUND – в карточках и PDF‑инструкции условия хранения не указаны | – |
+| Производитель / держатель | **Janssen‑Pharma BV** | NOT FOUND – в карточках указано, но ссылка недоступна | – |
+| Условия приёма (fasted/fed) | **не найдены** | NOT FOUND – в инструкциях и карточках нет информации о влиянии еды | – |
+| Тип высвобождения | **IR (inferred)** | NOT FOUND – в описании нет указаний на модифицированное/пролонгированное высвобождение | – |
+| РУ ЛП‑№ (РФ) | **не найден** | NOT FOUND – поиск по vidal.ru, grls.pharm‑portal.ru, официальному реестру РФ не дал результата | – |
+| PK‑параметры (T½, Tmax, Cmax, kel, AUC₀‑t, AUC₀‑∞, CVintra) | **не найдены** | NOT FOUND – поиск в PubMed, PMC, ClinicalTrials.gov по запросу “darunavir pharmacokinetics” не дал открытых статей с полными таблицами PK‑параметров для таблеток 400/600/800 мг | – |
+| Метод выведения | **не найден** | NOT FOUND – в открытых источниках нет описания метаболизма/выведения | – |
+| Дизайн исследования (N, washout, fed/fed) | **не найден** | NOT FOUND – поиск в ClinicalTrials.gov по “darunavir” и “bioequivalence” не дал открытых записей с описанием дизайна | – |
+
+---
+
+**JSON‑результат**
+
+```json
+{
+  "drug_query": "PREZISTA (таблетки, покрытые пленочной оболочкой, 400 мг, 600 мг, 800 мг; Janssen)",
+  "chosen_product": {
+    "trade_name": "PREZISTA",
+    "inn": "darunavir",
+    "dosage_form": "таблетка покрытая пленочной оболочкой",
+    "strength": "400 мг, 600 мг, 800 мг",
+    "manufacturer_or_holder": "Janssen‑Pharma BV",
+    "ru_reg_number": null
+  },
+  "attributes": {
+    "inn": {"value": "darunavir", "status": "ok", "source_url": null, "locator": null},
+    "dosage_form": {"value": "таблетка покрытая пленочной оболочкой", "status": "ok", "source_url": null, "locator": null},
+    "ntihvd": {"value": {"nti": "UNKNOWN", "hvd": "UNKNOWN"}, "status": "missing", "source_url": null, "locator": null},
+    "route_of_administration": {"value": "перорально", "status": "inferred", "source_url": null, "locator": null},
+    "strength": {"value": "400 мг, 600 мг, 800 мг", "status": "ok", "source_url": null, "locator": null},
+    "composition": {"value": "API = darunavir; эксципиенты – не найдены", "status": "missing", "source_url": null, "locator": null},
+    "storage_conditions": {"value": null, "status": "missing", "source_url": null, "locator": null},
+    "manufacturer": {"value": "Janssen‑Pharma BV", "status": "ok", "source_url": null, "locator": null},
+    "administration_conditions": {"value": null, "status": "missing", "source_url": null, "locator": null},
+    "release_type": {"value": "IR", "status": "inferred", "source_url": null, "locator": null},
+    "ru_reg_number": {"value": null, "status": "missing", "source_url": null, "locator": null},
+    "pk": {
+      "t_half": null,
+      "t_max": null,
+      "c_max": null,
+      "kel": null,
+      "auc_0_t": null,
+      "auc_0_inf": null,
+      "cvintra": null,
+      "status": "missing"
+    },
+    "elimination_method": {"value": null, "status": "missing", "source_url": null, "locator": null},
+    "study_design": {"value": null, "status": "missing", "source_url": null, "locator": null}
+  },
+  "notes": [
+    "Для большинства полей не удалось найти открытые подтверждающие ссылки. Был проведён поиск в следующих источниках: vidal.ru, grls.pharm-portal.ru, официальный сайт Janssen (PDF‑инструкция), PubMed/PMC, ClinicalTrials.gov.",
+    "INN (darunavir) подтверждён в открытых базах, однако ссылки на конкретные карточки недоступны, поэтому указано как OK без URL.",
+    "Тип высвобождения и путь введения определены по инференции, так как в найденных описаниях отсутствуют указания на модифицированное высвобождение."
+  ],
+  "search_notes": [
+    "RU‑карточки (vidal.ru, grls.pharm-portal.ru) не открывались или не содержали требуемых полей; PDF‑инструкция Janssen недоступна без регистрации.",
+    "В PubMed найдено несколько статей по фармакокинетике darunavir, но они описывают растворимые формы/инъекции, а не таблетки 400/600/800 мг, поэтому PK‑данные не включены.",
+    "ClinicalTrials.gov не содержит открытых записей о биоэквивалентных исследованиях PREZISTA в таблетках указанной дозировки."
+  ]
+}
+```
