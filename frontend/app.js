@@ -33,12 +33,6 @@
     baseForm: $("baseFormInput"),
     releaseType: $("releaseTypeInput"),
     dosage: $("dosageInput"),
-    autorun: $("autorunCheckbox"),
-    apiUrl: $("apiUrlInput"),
-    xlsPath: $("xlsPathInput"),
-    saveJson: $("saveJsonPathInput"),
-    saveRouter: $("saveRouterOutputPathInput"),
-    resetFormBtn: $("resetFormBtn"),
     drawerToggleBtn: $("drawerToggleBtn"),
     drawerCloseBtn: $("drawerCloseBtn"),
     drawerBackdrop: $("drawerBackdrop"),
@@ -48,7 +42,6 @@
   };
 
   async function init() {
-    dom.apiUrl.value = window.location.origin;
     loadPrefs();
     loadHistory();
     applyDrawerState();
@@ -60,12 +53,6 @@
 
   function bind() {
     dom.form.addEventListener("submit", onSearch);
-    dom.resetFormBtn.addEventListener("click", () => {
-      dom.form.reset();
-      dom.releaseType.value = "обычное";
-      dom.autorun.checked = true;
-      dom.mnn.focus();
-    });
     dom.timeline.addEventListener("click", onTimelineClick);
     dom.historyList.addEventListener("click", onHistoryClick);
     dom.newChatBtn.addEventListener("click", newChat);
@@ -204,8 +191,8 @@
       updatedAt,
       query: run.query || {},
       xlsPath: null,
-      matchesCount: null,
-      referenceOptionsCount: null,
+      matchesCount: run.matches_count ?? null,
+      referenceOptionsCount: run.reference_options_count ?? null,
       selectedReferenceDrug: run.selected_reference_drug || null,
       selectionJsonPath: run.selection_file_path || null,
       routerOutputPath: run.router_output_path || null,
@@ -239,7 +226,7 @@
   }
 
   function getApiBase() {
-    return (dom.apiUrl.value || window.location.origin).trim().replace(/\/+$/, "");
+    return window.location.origin;
   }
 
   async function api(path, method, body, timeoutMs) {
@@ -297,8 +284,6 @@
     const loading = appendLoading("щу референтные препараты...");
 
     const payload = { ...q };
-    if (dom.xlsPath.value.trim()) payload.xls_path = dom.xlsPath.value.trim();
-
     setSearchPending(true);
     try {
       const result = await api("/reference/search", "POST", payload, 180000);
@@ -349,7 +334,7 @@
     const wrap = document.createElement("div");
     wrap.className = "ref-options";
     (result.reference_options || []).forEach((opt, i) => {
-      wrap.append(referenceCard(opt, result.session_id, i + 1, dom.autorun.checked));
+      wrap.append(referenceCard(opt, result.session_id, i + 1, true));
     });
     body.append(wrap);
     mountMessage(msg);
@@ -439,9 +424,6 @@
     }
 
     const body = { session_id: sessionId, option_index: optionIndex };
-    if (dom.saveJson.value.trim()) body.save_json_path = dom.saveJson.value.trim();
-    if (dom.saveRouter.value.trim()) body.save_router_output_path = dom.saveRouter.value.trim();
-
     try {
       const result = await api(mode === "pipeline" ? "/pipeline/analyze" : "/reference/choose", "POST", body, mode === "pipeline" ? 600000 : 120000);
       removeNode(loading);
@@ -528,8 +510,8 @@
       updatedAt: run.finished_at || run.created_at || new Date().toISOString(),
       query: run.query || {},
       xlsPath: null,
-      matchesCount: null,
-      referenceOptionsCount: null,
+      matchesCount: run.matches_count ?? null,
+      referenceOptionsCount: run.reference_options_count ?? null,
       selectedReferenceDrug: run.selected_reference_drug || null,
       selectionJsonPath: run.selection_file_path || null,
       routerOutputPath: run.router_output_path || null,
@@ -577,12 +559,9 @@
     const msg = createMessage("assistant", "Референт выбран", "Сохранение");
     if (result.run_id) msg.dataset.runId = result.run_id;
     const body = msg.querySelector(".message-body");
-    body.append(p("JSON выбора сохранен. Анализ `test_router.py` не запускался."));
+    body.append(p(result.selected_reference_drug || "—"));
     body.append(kvGrid([
-      ["Референт", result.selected_reference_drug || "—"],
       ["Строк по референту", String(result.selected_reference_rows_count ?? "—")],
-      ["session_id", result.session_id || "—"],
-      ["JSON", result.saved_json_path || "—"],
     ]));
     if (result.selection_payload && result.selection_payload.selected_reference_rows) {
       body.append(buildReferenceTable(result.selection_payload.selected_reference_rows));
@@ -600,8 +579,6 @@
     body.append(p("Референт выбран и передан в `test_router.py`."));
     body.append(kvGrid([
       ["Референт", s.selected_reference_drug || r.reference_drug || "—"],
-      ["JSON выбора", s.saved_json_path || "—"],
-      ["Файл ответа", r.saved_response_path || "—"],
       ["Строк по референту", String(s.selected_reference_rows_count ?? "—")],
     ]));
 
@@ -614,33 +591,6 @@
       if (parsedTable) {
         body.append(buildAnalysisTable(parsedTable));
       }
-      const details = document.createElement("details");
-      details.className = "text-block";
-      const summary = document.createElement("summary");
-      summary.textContent = "Ответ `test_router.py`";
-      details.append(summary);
-
-      const pre = el("pre", "mono-block");
-      pre.id = `analysis-${cryptoId()}`;
-      pre.textContent = r.analysis_text;
-      details.append(pre);
-
-      const row = el("div", "message-actions-row");
-      const copy = el("button", "ghost-btn", "Скопировать ответ");
-      copy.type = "button";
-      copy.dataset.action = "copy-text";
-      copy.dataset.targetId = pre.id;
-      row.append(copy);
-      details.append(row);
-      body.append(details);
-    } else if (r.analysis_text === "") {
-      const details = document.createElement("details");
-      details.className = "text-block";
-      const summary = document.createElement("summary");
-      summary.textContent = "Ответ `test_router.py`";
-      details.append(summary);
-      details.append(el("p", null, "Ответ пустой (0 символов)."));
-      body.append(details);
     }
     if (s.run_id) {
       const record = getRecordByRunId(s.run_id);
@@ -889,14 +839,12 @@
       if (h.id === state.activeHistoryId) b.classList.add("is-active");
       const titleRow = el("div", "history-item-title-row");
       titleRow.append(el("div", "history-item-title", `${h.query?.mnn || "—"} • ${h.query?.dosage || "—"}`));
-      if (h.runId) {
-        const del = el("button", "history-delete-btn", "✕");
-        del.type = "button";
-        del.dataset.action = "delete-history";
-        del.dataset.runId = h.runId;
-        del.dataset.historyId = h.id;
-        titleRow.append(del);
-      }
+      const del = el("button", "history-delete-btn", "✕");
+      del.type = "button";
+      del.dataset.action = h.runId ? "delete-history" : "delete-history-local";
+      if (h.runId) del.dataset.runId = h.runId;
+      del.dataset.historyId = h.id;
+      titleRow.append(del);
       b.append(
         titleRow,
         subRow(`${fmtDate(h.updatedAt || h.createdAt)}`, `${h.referenceOptionsCount || 0} refs / ${h.matchesCount || 0} rows`)
@@ -925,6 +873,12 @@
       deleteHistoryItem(actionBtn);
       return;
     }
+    if (actionBtn && actionBtn.dataset.action === "delete-history-local") {
+      e.preventDefault();
+      e.stopPropagation();
+      deleteLocalHistoryItem(actionBtn);
+      return;
+    }
     const btn = e.target.closest("[data-history-id]");
     if (!btn) return;
     const record = state.history.find((h) => h.id === btn.dataset.historyId);
@@ -943,7 +897,6 @@
     dom.baseForm.value = q.base_form || "";
     dom.releaseType.value = q.release_type || "обычное";
     dom.dosage.value = q.dosage || "";
-    if (record.xlsPath) dom.xlsPath.value = record.xlsPath;
   }
 
   function renderHistoryConversation(record) {
@@ -964,35 +917,11 @@
       if (record.runId) msg.dataset.runId = record.runId;
       const body = msg.querySelector(".message-body");
       body.append(p(record.selectedReferenceDrug));
-      body.append(kvGrid([
-        ["JSON выбора", record.selectionJsonPath || "—"],
-        ["Файл ответа", record.routerOutputPath || "—"],
-      ]));
       if (record.analysisText) {
         const parsedTable = parseMarkdownTable(record.analysisText);
         if (parsedTable) {
           body.append(buildAnalysisTable(parsedTable));
         }
-        const d = document.createElement("details");
-        d.className = "text-block";
-        const s = document.createElement("summary");
-        s.textContent = "Ответ `test_router.py`";
-        d.append(s, el("pre", "mono-block", record.analysisText));
-        body.append(d);
-      } else if (record.analysisText === "") {
-        const d = document.createElement("details");
-        d.className = "text-block";
-        const s = document.createElement("summary");
-        s.textContent = "Ответ `test_router.py`";
-        d.append(s, el("p", null, "Ответ пустой (0 символов)."));
-        body.append(d);
-      } else if (record.analysisPreview) {
-        const d = document.createElement("details");
-        d.className = "text-block";
-        const s = document.createElement("summary");
-        s.textContent = "Фрагмент ответа `test_router.py`";
-        d.append(s, el("pre", "mono-block", record.analysisPreview));
-        body.append(d);
       }
       if (record.selectionRows && Array.isArray(record.selectionRows)) {
         body.append(buildReferenceTable(record.selectionRows));
@@ -1178,6 +1107,22 @@
     } catch (err) {
       appendError(err.message, err.payload);
     }
+  }
+
+  function deleteLocalHistoryItem(btn) {
+    const historyId = btn.dataset.historyId;
+    if (!historyId) return;
+    const idx = state.history.findIndex((h) => h.id === historyId);
+    if (idx !== -1) state.history.splice(idx, 1);
+    if (state.activeHistoryId === historyId) {
+      state.activeHistoryId = null;
+      state.historyView = false;
+      dom.timeline.innerHTML = "";
+      dom.timeline.classList.remove("has-messages");
+    }
+    saveHistory();
+    renderHistory();
+    updateComposerVisibility();
   }
 
   async function buildSynopsis(btn) {

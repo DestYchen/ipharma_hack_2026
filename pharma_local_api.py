@@ -60,6 +60,8 @@ def _init_db() -> None:
                     mode TEXT NOT NULL,
                     session_id TEXT,
                     query_json TEXT,
+                    matches_count INTEGER,
+                    reference_options_count INTEGER,
                     selected_reference_drug TEXT,
                     selection_rows_count INTEGER,
                     selection_json TEXT,
@@ -98,6 +100,8 @@ def _ensure_run_columns(conn: sqlite3.Connection) -> None:
         "status": "TEXT NOT NULL DEFAULT 'done'",
         "started_at": "TEXT",
         "finished_at": "TEXT",
+        "matches_count": "INTEGER",
+        "reference_options_count": "INTEGER",
     }
     for name, ddl in required.items():
         if name in existing:
@@ -113,6 +117,8 @@ def _insert_run(
     mode: str,
     session_id: str | None,
     query: dict[str, Any] | None,
+    matches_count: int | None,
+    reference_options_count: int | None,
     selected_reference_drug: str | None,
     selection_rows_count: int | None,
     selection_payload: dict[str, Any] | None,
@@ -131,9 +137,9 @@ def _insert_run(
                 """
                 INSERT INTO runs (
                     id, created_at, status, started_at, finished_at, mode, session_id, query_json,
-                    selected_reference_drug, selection_rows_count, selection_json,
+                    matches_count, reference_options_count, selected_reference_drug, selection_rows_count, selection_json,
                     selection_file_path, router_output_text, router_output_path
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     run_id,
@@ -144,6 +150,8 @@ def _insert_run(
                     mode,
                     session_id,
                     query_json,
+                    matches_count,
+                    reference_options_count,
                     selected_reference_drug,
                     selection_rows_count,
                     payload_json,
@@ -165,6 +173,8 @@ def _update_run(run_id: str, **fields: Any) -> None:
         "status",
         "started_at",
         "finished_at",
+        "matches_count",
+        "reference_options_count",
         "selected_reference_drug",
         "selection_rows_count",
         "selection_json",
@@ -196,6 +206,8 @@ def _row_to_run(row: tuple[Any, ...]) -> dict[str, Any]:
         mode,
         session_id,
         query_json,
+        matches_count,
+        reference_options_count,
         selected_reference_drug,
         selection_rows_count,
         selection_json,
@@ -205,6 +217,15 @@ def _row_to_run(row: tuple[Any, ...]) -> dict[str, Any]:
     ) = row
     query = json.loads(query_json) if query_json else None
     selection_payload = json.loads(selection_json) if selection_json else None
+    if selection_payload and (matches_count is None or reference_options_count is None):
+        ref_options = selection_payload.get("reference_options") or []
+        if matches_count is None:
+            try:
+                matches_count = sum(int(opt.get("rows_count") or 0) for opt in ref_options)
+            except (TypeError, ValueError):
+                matches_count = None
+        if reference_options_count is None:
+            reference_options_count = len(ref_options)
     return {
         "id": run_id,
         "created_at": created_at,
@@ -214,6 +235,8 @@ def _row_to_run(row: tuple[Any, ...]) -> dict[str, Any]:
         "mode": mode,
         "session_id": session_id,
         "query": query,
+        "matches_count": matches_count,
+        "reference_options_count": reference_options_count,
         "selected_reference_drug": selected_reference_drug,
         "selection_rows_count": selection_rows_count,
         "selection_payload": selection_payload,
@@ -230,6 +253,7 @@ def _get_run(run_id: str) -> dict[str, Any] | None:
             cur = conn.execute(
                 """
                 SELECT id, created_at, status, started_at, finished_at, mode, session_id, query_json,
+                       matches_count, reference_options_count,
                        selected_reference_drug, selection_rows_count, selection_json, selection_file_path,
                        router_output_text, router_output_path
                 FROM runs WHERE id = ?
@@ -251,6 +275,7 @@ def _list_runs(limit: int = 20, status: str | None = None) -> list[dict[str, Any
                 cur = conn.execute(
                     """
                     SELECT id, created_at, status, started_at, finished_at, mode, session_id, query_json,
+                           matches_count, reference_options_count,
                            selected_reference_drug, selection_rows_count, selection_json, selection_file_path,
                            router_output_text, router_output_path
                     FROM runs WHERE status = ?
@@ -263,6 +288,7 @@ def _list_runs(limit: int = 20, status: str | None = None) -> list[dict[str, Any
                 cur = conn.execute(
                     """
                     SELECT id, created_at, status, started_at, finished_at, mode, session_id, query_json,
+                           matches_count, reference_options_count,
                            selected_reference_drug, selection_rows_count, selection_json, selection_file_path,
                            router_output_text, router_output_path
                     FROM runs
@@ -767,6 +793,8 @@ class PharmaApiHandler(BaseHTTPRequestHandler):
             mode="choose",
             session_id=session.request_id,
             query=session.query,
+            matches_count=len(session.matched_indices),
+            reference_options_count=len(session.reference_options),
             selected_reference_drug=chosen_reference,
             selection_rows_count=rows_count,
             selection_payload=selection_payload,
@@ -802,6 +830,8 @@ class PharmaApiHandler(BaseHTTPRequestHandler):
             mode="router",
             session_id=None,
             query=None,
+            matches_count=None,
+            reference_options_count=None,
             selected_reference_drug=reference_drug,
             selection_rows_count=None,
             selection_payload=None,
@@ -858,6 +888,8 @@ class PharmaApiHandler(BaseHTTPRequestHandler):
             mode="pipeline",
             session_id=session.request_id,
             query=session.query,
+            matches_count=len(session.matched_indices),
+            reference_options_count=len(session.reference_options),
             selected_reference_drug=selected_reference,
             selection_rows_count=rows_count,
             selection_payload=selection_payload,

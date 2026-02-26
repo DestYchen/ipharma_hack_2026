@@ -13,12 +13,12 @@ IMPORTANT:
 - Set env var OPENROUTER_API_KEY before running.
 """
 
-OPENROUTER_API_KEY = ""
+OPENROUTER_API_KEY = os.getenv('PHARMA_API_KEY')
 if not OPENROUTER_API_KEY:
     raise RuntimeError("Set OPENROUTER_API_KEY env var")
 
 # Recommended: keep this model stable for consistent formatting
-MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-oss-120b:online")
+MODEL = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4.6:online")
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # ---- Prompt template ----
@@ -43,6 +43,7 @@ $drug_query
 - ссылка реальная,
 - на странице явно совпадает препарат (торговое название/МНН),
 - совпадает форма и дозировка (если указаны во входе).
+- очень важно найти PK и дизайн исследования.
 
 ВАЖНО:
 1) Не останавливайся после 1-2 неудачных попыток.
@@ -73,13 +74,12 @@ $drug_query
 Перед тем как вернуть NOT FOUND для поля, сделай минимум:
 - 1 попытку в RU-карточках/инструкциях (для продуктовых полей)
 - 1 попытку в альтернативных открытых карточках/агрегаторах (если RU-карточка не дала результата)
-- 1 попытку в PubMed/PMC/ClinicalTrials (для PK/дизайна)
+- 3 попытки в PubMed/PMC/ClinicalTrials (для PK/дизайна)
 Если после этого нет — тогда NOT FOUND.
 
 ПРАВИЛО РАЗДЕЛЕНИЯ ИСТОЧНИКОВ:
 - Продуктовые поля (состав, хранение, производитель, форма, доза, РУ) ищи в карточках/инструкциях.
-- PK и дизайн исследования (Cmax/AUC/Tmax/T1/2/CVintra/N/washout/fasted/fed) ищи в статьях/реестрах.
-- Не пытайся брать PK из аптечной карточки, если там нет первичного источника.
+- PK и дизайн исследования (Cmax/AUC/Tmax/T1/2/CVintra/N/washout/fasted/fed) ищи везде, где только можно.
 
 ЦЕЛЕВЫЕ ПОЛЯ:
 - INN/МНН
@@ -135,7 +135,7 @@ B) PK/BE источники:
      Если цифр нет — NOT FOUND, но с реальной ссылкой и указанием “нет результатов”.
 
 ШАГ 4 — NTI/HVD
-4.1. NTI: если нет официального утверждения — UNKNOWN.
+4.1. NTI: подходит люая информация в любом источнике.
 4.2. HVD: если найден CVintra:
      - CVintra >= 30% => HVD=YES
      - иначе HVD=NO
@@ -143,7 +143,6 @@ B) PK/BE источники:
 
 ОБЯЗАТЕЛЬНЫЙ SELF-CHECK ПЕРЕД ВЫВОДОМ:
 - Убедись, что все URL реальны (не шаблоны) и соответствуют источникам.
-- Убедись, что нет выдуманных PMID/NCT/РУ.
 - Если сомневаешься — NOT FOUND.
 
 ВЫВОД:

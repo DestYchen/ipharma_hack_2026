@@ -20,7 +20,7 @@ PROMPT_PATH_DEFAULT = Path(__file__).resolve().parent / "промт для си�
 TEMPLATE_PATH_DEFAULT = Path(__file__).resolve().parent / "Синопсис для гпт ver.2 (3).docx"
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-MODEL = os.getenv("OPENROUTER_MODEL", "openai/gpt-5.2")
+MODEL = os.getenv("OPENROUTER_MODEL", "anthropic/claude-sonnet-4.6")
 
 
 @dataclass
@@ -227,7 +227,7 @@ def _build_prompt(prompt_text: str, attributes: dict[str, Any], template_text: s
 
 
 def _openrouter_chat(prompt: str) -> str:
-    api_key = ""
+    api_key = os.getenv('PHARMA_API_KEY')
     if not api_key:
         raise RuntimeError("Set OPENROUTER_API_KEY env var")
 
