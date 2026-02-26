@@ -227,7 +227,7 @@ def _build_prompt(prompt_text: str, attributes: dict[str, Any], template_text: s
 
 
 def _openrouter_chat(prompt: str) -> str:
-    api_key = "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"
+    api_key = ""
     if not api_key:
         raise RuntimeError("Set OPENROUTER_API_KEY env var")
 

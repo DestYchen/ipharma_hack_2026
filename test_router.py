@@ -13,7 +13,7 @@ IMPORTANT:
 - Set env var OPENROUTER_API_KEY before running.
 """
 
-OPENROUTER_API_KEY = "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"
+OPENROUTER_API_KEY = ""
 if not OPENROUTER_API_KEY:
     raise RuntimeError("Set OPENROUTER_API_KEY env var")
 
